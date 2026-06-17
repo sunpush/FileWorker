@@ -29,6 +29,15 @@ const uploadSingle = async (index: number, filename: string, file: File) => {
   uploadedFiles.value[index - 1].done = true;
 }
 
+const onDownloadClick = (filename: string) => {
+  const link = document.createElement('a');
+  link.href = `/${filename}`;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 onMounted(() => {
   fileUploadInput.value.addEventListener('change', async (event: Event) => {
     const target = event.target as HTMLInputElement;
@@ -113,22 +122,23 @@ onUnmounted(() => {
       </div>
     </div>
     <div class="px-4 py-4 max-w-screen-md w-4/5">
-      <a v-for="file in uploadedFiles" :key="file.name" class="w-full flex flex-row items-center mt-4"
-        :href="`/${file.name}`" target="_blank">
+      <div v-for="file in uploadedFiles" :key="file.name" class="w-full flex flex-row items-center mt-4">
         <div class="w-10 h-10 i-mdi-file-document-outline"></div>
         <div class="flex flex-col">
           <div class="text-lg font-semibold">{{ file.name }}</div>
           <div class="text-sm text-gray">{{ formatBytes(file.size) }} {{ file.visibility }}</div>
         </div>
-        <div class="ml-auto">
+        <div class="ml-auto flex items-center gap-2">
           <div v-if="file.done" class="w-6 h-6 i-mdi-check"></div>
           <svg v-else class="progress-circle" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="45" class="progress-bg"></circle>
             <circle cx="50" cy="50" r="45" class="progress-fill" :style="{ strokeDashoffset: 282.7 - (282.7 * file.progress / 100) }"></circle>
             <text x="50" y="55" text-anchor="middle" class="progress-text">{{ file.progress }}%</text>
           </svg>
+          <div v-if="file.done" class="w-6 h-6 i-mdi-download cursor-pointer"
+            @click="onDownloadClick(file.name)" title="下载"></div>
         </div>
-      </a>
+      </div>
     </div>
   </div>
 </template>
