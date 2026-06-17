@@ -17,12 +17,15 @@ interface UploadedFile {
   size: number;
   visibility: string;
   done: boolean;
+  progress: number;
 }
 
 let uploadedFiles: Ref<UploadedFile[]> = ref([]);
 
 const uploadSingle = async (index: number, filename: string, file: File) => {
-  await PutFile(filename, file, fileStore.visibility, "file");
+  await PutFile(filename, file, fileStore.visibility, "file", (progress) => {
+    uploadedFiles.value[index - 1].progress = progress;
+  });
   uploadedFiles.value[index - 1].done = true;
 }
 
@@ -37,7 +40,8 @@ onMounted(() => {
           name: file.name,
           size: file.size,
           visibility: fileStore.visibility,
-          done: false
+          done: false,
+          progress: 0
         });
         try {
           uploadSingle(index, file.name, file);
@@ -68,7 +72,8 @@ const onDragEvent = async (event: DragEvent) => {
           name: file.name,
           size: file.size,
           visibility: fileStore.visibility,
-          done: false
+          done: false,
+          progress: 0
         });
         try {
           uploadSingle(index, file.name, file);
@@ -115,7 +120,14 @@ onUnmounted(() => {
           <div class="text-lg font-semibold">{{ file.name }}</div>
           <div class="text-sm text-gray">{{ formatBytes(file.size) }} {{ file.visibility }}</div>
         </div>
-        <div class="ml-auto w-6 h-6" :class="file.done ? 'i-mdi-check' : 'uploading'"></div>
+        <div class="ml-auto">
+          <div v-if="file.done" class="w-6 h-6 i-mdi-check"></div>
+          <svg v-else class="progress-circle" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" class="progress-bg"></circle>
+            <circle cx="50" cy="50" r="45" class="progress-fill" :style="{ strokeDashoffset: 282.7 - (282.7 * file.progress / 100) }"></circle>
+            <text x="50" y="55" text-anchor="middle" class="progress-text">{{ file.progress }}%</text>
+          </svg>
+        </div>
       </a>
     </div>
   </div>
@@ -189,13 +201,31 @@ body,
   }
 }
 
-.uploading {
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #555;
-  border-radius: 50%;
+.progress-circle {
   width: 50px;
   height: 50px;
-  display: inline-block;
-  animation: spin 2s linear infinite;
+}
+
+.progress-bg {
+  fill: none;
+  stroke: #f3f3f3;
+  stroke-width: 4;
+}
+
+.progress-fill {
+  fill: none;
+  stroke: #4CAF50;
+  stroke-width: 4;
+  stroke-dasharray: 282.7;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease;
+  transform: rotate(-90deg);
+  transform-origin: 50px 50px;
+}
+
+.progress-text {
+  font-size: 24px;
+  font-weight: bold;
+  fill: #333;
 }
 </style>
